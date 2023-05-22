@@ -10,6 +10,17 @@ describe('readonly', function () {
         expect(wrapped.foo).toBe(1);
     });
 
+    it('should make nested values readonly', function () {
+        const original = { foo: 1, bar: { baz: 3 } };
+        const wrapped = readonly(original);
+        expect(wrapped).not.toBe(original);
+        expect(isReadonly(wrapped)).toBe(true);
+        expect(isReadonly(original)).toBe(false);
+        expect(isReadonly(wrapped.bar)).toBe(true);
+        expect(isReadonly(original.bar)).toBe(false);
+        expect(wrapped.foo).toBe(1);
+    });
+
     it('should warn when call set', function () {
         // console.warn()
         // mock
