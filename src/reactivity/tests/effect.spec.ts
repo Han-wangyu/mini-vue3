@@ -1,6 +1,5 @@
 import {reactive} from "../reactive";
 import {effect, stop} from "../effect";
-import {run} from "jest";
 
 describe('effect', function () {
     it('happy path', function () {
@@ -73,7 +72,7 @@ describe('effect', function () {
         obj.prop = 2;
         expect(dummy).toBe(2);
         stop(runner);
-        obj.prop = 3;
+        obj.prop ++ ;
         expect(dummy).toBe(2);
 
         // stopped effect should still be manually callable

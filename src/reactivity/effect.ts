@@ -1,5 +1,7 @@
-import {run} from "jest";
 import {extend} from "../shared";
+
+let activeEffect;
+let shouldTrack;
 
 class ReactiveEffect {
     private _fn: any;
@@ -13,8 +15,17 @@ class ReactiveEffect {
         this.scheduler = scheduler;
     }
     run() {
+        if (!this.active) {  // stopped
+            return this._fn();
+        }
+
+        shouldTrack = true;
         activeEffect = this;
-        return this._fn();
+        const result = this._fn();
+        // reset
+        shouldTrack = false;
+
+        return result;
     }
     stop() {
         if (this.active) {
@@ -31,10 +42,15 @@ function cleanupEffect(effect) {
     effect.deps.forEach((dep: any) => {
         dep.delete(effect);
     })
+    effect.deps.length = 0;
 }
 
 const targetMap = new Map();
 export function track(target, key) {
+    if (!isTracking()) {
+        return ;
+    }
+
     // target -> key -> dep
     let depsMap = targetMap.get(target);
     if (!depsMap) {
@@ -48,10 +64,14 @@ export function track(target, key) {
         depsMap.set(key, dep);
     }
 
-    if (!activeEffect) return ;
-
+    // 如果已经有 dep 在 activeEffect 中，则直接return
+    if (dep.has(activeEffect)) return ;
     dep.add(activeEffect);
     activeEffect.deps.push(dep);  // 对每一个activeEffect存储它的dep
+}
+
+function isTracking() {
+    return shouldTrack && activeEffect !== undefined;
 }
 
 export function trigger(target, key) {
@@ -67,7 +87,6 @@ export function trigger(target, key) {
     }
 }
 
-let activeEffect;
 export function effect(fn, options: any = {}) {
     // fn
     const _effect = new ReactiveEffect(fn, options.scheduler);
